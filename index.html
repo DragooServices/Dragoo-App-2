@@ -1,0 +1,2231 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dragoo Services – Pool Log</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      background: #0f172a; /* dark navy */
+      color: #f9fafb;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      gap: 8px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      color: #38bdf8; /* light blue accent */
+    }
+
+    header small {
+      display: block;
+      font-size: 11px;
+      color: #93c5fd;
+    }
+
+    #header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: row;
+      min-height: calc(100vh - 52px);
+    }
+
+    /* Left column: clients */
+    #clients-panel {
+      width: 280px;
+      max-width: 100%;
+      border-right: 1px solid #e5e7eb;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #clients-panel h2 {
+      margin: 10px 12px 2px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    #clients-filter-label {
+      margin: 0 12px 6px;
+      font-size: 11px;
+      color: #6b7280;
+      display: block;
+    }
+
+    #client-form, #backup-panel {
+      padding: 8px 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    #client-form label, #backup-panel label {
+      display: block;
+      font-size: 11px;
+      margin-top: 6px;
+      margin-bottom: 2px;
+      color: #4b5563;
+    }
+
+    #client-form input, #client-form textarea, #client-form select {
+      width: 100%;
+      padding: 4px 6px;
+      font-size: 13px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    #client-form textarea {
+      resize: vertical;
+      min-height: 40px;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 6px;
+      border: none;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s ease-in-out;
+    }
+
+    button.small {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    /* Color variants */
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #ffffff;
+    }
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    #clients-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0 8px;
+    }
+
+    .route-day-header {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6b7280;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .client-item {
+      padding: 6px 10px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .client-item:hover {
+      background: #f3f4f6;
+    }
+
+    .client-item.active {
+      background: #dbeafe;
+      font-weight: 700;
+      border-left: 4px solid #2563eb;
+    }
+
+    .client-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .client-meta {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .client-day-pill {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      white-space: nowrap;
+    }
+
+    /* Drag & drop states */
+    .client-item.drag-over {
+      background: #fee2e2;
+    }
+
+    .route-day-header.drag-over {
+      background: #e0f2fe;
+    }
+
+    /* Right main panel */
+    #main-panel {
+      flex: 1;
+      padding: 10px 12px 40px;
+      overflow-y: auto;
+    }
+
+    #main-panel h2 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
+      border-left: 4px solid #2563eb;
+    }
+
+    .section-card h3 {
+      margin-top: 0;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .section-card small {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 6px 10px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      font-size: 11px;
+    }
+
+    .field label {
+      margin-bottom: 1px;
+      color: #4b5563;
+    }
+
+    .field input, .field textarea, .field select {
+      padding: 4px 6px;
+      border-radius: 4px;
+      border: 1px solid #d1d5db;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 46px;
+    }
+
+    .visits-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .visits-table th, .visits-table td {
+      border: 1px solid #e5e7eb;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .visits-table th {
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 10px;
+      margin-right: 4px;
+      margin-top: 2px;
+    }
+
+    .tag-spin {
+      background: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .tag-taylor {
+      background: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      margin-right: 4px;
+      margin-top: 2px;
+    }
+
+    .pill-date {
+      background: #eff6ff;
+    }
+
+    .pill-visit-id {
+      background: #f3f4f6;
+    }
+
+    .footer-note {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    #backup-panel button {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    #import-file {
+      margin-top: 4px;
+      width: 100%;
+      font-size: 11px;
+    }
+
+    /* Cleaning badges */
+    .clean-badges {
+      margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .clean-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid #bae6fd;
+      background: #ecfeff;
+      color: #075985;
+    }
+
+    /* Lee Assistant styles */
+    #assistant-messages {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f9fafb;
+      font-size: 12px;
+    }
+
+    .assistant-msg {
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .assistant-msg-user {
+      background: #dbeafe;
+    }
+
+    .assistant-msg-assistant {
+      background: #e5e7eb;
+    }
+
+    .assistant-msg-role {
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 2px;
+      color: #374151;
+    }
+
+    .assistant-row {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #assistant-prompt {
+      width: 100%;
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    #assistant-api-key {
+      width: 100%;
+    }
+
+    #assistant-status {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 800px) {
+      #app {
+        flex-direction: column;
+      }
+      #clients-panel {
+        width: 100%;
+        max-height: 45vh;
+      }
+      #main-panel {
+        min-height: 55vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div>
+    <h1>Dragoo Services</h1>
+    <small>Private pool log – Clients & Chemistry (SpinTouch + Taylor)</small>
+  </div>
+  <div id="header-right">
+    <button id="today-route-btn" class="small btn-secondary" type="button">Today’s Route</button>
+    <button id="daily-chem-view-btn" class="small btn-secondary" type="button">Daily Chem Check</button>
+    <button id="phos-view-btn" class="small btn-secondary" type="button">Phosphates</button>
+    <button id="ch-view-btn" class="small btn-secondary" type="button">Calcium Hardness</button>
+    <button id="dosage-view-btn" class="small btn-secondary" type="button">Dosage Charts</button>
+    <button id="assistant-view-btn" class="small btn-secondary" type="button">Lee Assistant</button>
+    <span style="font-size: 11px; color:#93c5fd;">v2.3 – Drag Route Sorting</span>
+  </div>
+</header>
+
+<div id="app">
+  <!-- LEFT: CLIENTS -->
+  <aside id="clients-panel">
+    <h2>Clients</h2>
+    <small id="clients-filter-label">Showing: All route days</small>
+    <div id="clients-list"></div>
+
+    <div id="client-form">
+      <h3 style="font-size:13px;margin:4px 0 2px;">Add / Edit Client</h3>
+
+      <label for="client-name">Name</label>
+      <input id="client-name" type="text" placeholder="Client name">
+
+      <label for="client-address">Address</label>
+      <input id="client-address" type="text" placeholder="Address">
+
+      <label for="client-day">Service Day (Route)</label>
+      <select id="client-day">
+        <option value="">Unassigned</option>
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+      </select>
+
+      <label for="client-notes">Notes (gate code, pets, etc.)</label>
+      <textarea id="client-notes" placeholder=""></textarea>
+
+      <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+        <button id="save-client-btn" class="small btn-primary" type="button">Save Client</button>
+        <button id="new-client-btn" class="small btn-secondary" type="button">New</button>
+        <button id="delete-client-btn" class="small btn-danger" type="button" style="display:none;">Delete Client</button>
+      </div>
+      <small id="client-form-status" style="display:block;margin-top:4px;color:#6b7280;"></small>
+    </div>
+
+    <div id="backup-panel">
+      <h3 style="font-size:13px;margin:0 0 4px;">Backup / Restore</h3>
+      <button id="export-btn" class="small btn-secondary" type="button">Export Data (JSON)</button>
+      <label for="import-file">Import JSON (from backup)</label>
+      <input id="import-file" type="file" accept=".json">
+      <small style="display:block;margin-top:4px;">
+        Data is stored locally in this browser. Use export/import to move or back up.
+      </small>
+    </div>
+  </aside>
+
+  <!-- RIGHT: MAIN -->
+  <main id="main-panel">
+    <!-- Default welcome view -->
+    <div id="welcome">
+      <div class="section-card">
+        <h2>Welcome to Dragoo Services</h2>
+        <p style="font-size:13px; margin-top:4px;">
+          Select a client on the left or create a new one.<br>
+          Assign a <strong>Service Day</strong> (Monday–Friday) to organize your route.
+        </p>
+        <ul style="font-size:12px; margin-top:6px;">
+          <li>Clients list on the left is grouped by route day.</li>
+          <li>Tap <strong>Today’s Route</strong> to filter to today’s service day.</li>
+          <li>Use <strong>Phosphates</strong> to see Phos readings for every pool.</li>
+          <li>Use <strong>Daily Chem Check</strong> for FC / pH / Alk across the route.</li>
+          <li>Use <strong>Calcium Hardness</strong> to see CH for every pool.</li>
+          <li>Use <strong>Dosage Charts</strong> for quick range & dosage references.</li>
+          <li>Use <strong>Lee Assistant</strong> to get live help on pool problems.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Client detail view -->
+    <div id="client-detail" style="display:none;">
+      <div class="section-card">
+        <h2 id="client-detail-name"></h2>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:4px;">
+          <span id="client-detail-address"></span><br>
+          <span id="client-detail-notes"></span>
+        </div>
+        <div style="font-size:11px; color:#1d4ed8; margin-bottom:4px;">
+          <strong>Service Day:</strong> <span id="client-detail-day">Unassigned</span>
+        </div>
+
+        <div class="clean-badges">
+          <span id="last-filter-clean-badge" class="clean-badge">Last filter cleaned: —</span>
+          <span id="last-salt-clean-badge" class="clean-badge">Last salt cell cleaned: —</span>
+        </div>
+
+        <div class="footer-note">
+          All visits below are for this client. Separate SpinTouch and Taylor readings are stored for each visit.
+        </div>
+      </div>
+
+      <!-- Add Visit & Chemistry -->
+      <div class="section-card">
+        <h3>Add Visit & Chemistry</h3>
+        <small>Enter SpinTouch and/or Taylor readings. You can leave fields blank if not tested.</small>
+
+        <div class="grid">
+          <div class="field">
+            <label for="visit-date">Date</label>
+            <input type="date" id="visit-date">
+          </div>
+          <div class="field">
+            <label for="visit-notes">Visit Notes</label>
+            <textarea id="visit-notes" placeholder="Quick overall notes for this visit."></textarea>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:8px 0;">
+
+        <h4 style="font-size:13px;margin:0 0 4px;">SpinTouch Readings</h4>
+        <div class="grid">
+          <div class="field">
+            <label for="st-fc">FC (Chlorine)</label>
+            <input type="number" step="0.1" id="st-fc">
+          </div>
+          <div class="field">
+            <label for="st-ph">pH</label>
+            <input type="number" step="0.01" id="st-ph">
+          </div>
+          <div class="field">
+            <label for="st-alk">Alk</label>
+            <input type="number" step="1" id="st-alk">
+          </div>
+          <div class="field">
+            <label for="st-ch">CH</label>
+            <input type="number" step="1" id="st-ch">
+          </div>
+          <div class="field">
+            <label for="st-cya">CYA</label>
+            <input type="number" step="1" id="st-cya">
+          </div>
+          <div class="field">
+            <label for="st-salt">Salt</label>
+            <input type="number" step="1" id="st-salt">
+          </div>
+          <div class="field">
+            <label for="st-phos">Phos</label>
+            <input type="number" step="1" id="st-phos">
+          </div>
+        </div>
+
+        <h4 style="font-size:13px;margin:8px 0 4px;">Taylor Readings</h4>
+        <div class="grid">
+          <div class="field">
+            <label for="ty-fc">FC (Chlorine)</label>
+            <input type="number" step="0.1" id="ty-fc">
+          </div>
+          <div class="field">
+            <label for="ty-ph">pH</label>
+            <input type="number" step="0.01" id="ty-ph">
+          </div>
+          <div class="field">
+            <label for="ty-alk">Alk</label>
+            <input type="number" step="1" id="ty-alk">
+          </div>
+          <div class="field">
+            <label for="ty-ch">CH</label>
+            <input type="number" step="1" id="ty-ch">
+          </div>
+          <div class="field">
+            <label for="ty-cya">CYA</label>
+            <input type="number" step="1" id="ty-cya">
+          </div>
+          <div class="field">
+            <label for="ty-salt">Salt</label>
+            <input type="number" step="1" id="ty-salt">
+          </div>
+          <div class="field">
+            <label for="ty-phos">Phos</label>
+            <input type="number" step="1" id="ty-phos">
+          </div>
+        </div>
+
+        <h4 style="font-size:13px;margin:8px 0 4px;">Filter Cleaning</h4>
+        <small>Use this when you clean the filter (typically Jan and Jul) to record the exact date.</small>
+        <div class="grid">
+          <div class="field">
+            <label for="filter-clean-date">Filter cleaned on</label>
+            <input type="date" id="filter-clean-date">
+          </div>
+        </div>
+
+        <h4 style="font-size:13px;margin:8px 0 4px;">Salt Cell Cleaning</h4>
+        <small>Use this when you clean the salt cell (typically Jan, Apr, Jul, Oct) to record the exact date.</small>
+        <div class="grid">
+          <div class="field">
+            <label for="salt-cell-date">Salt cell cleaned on</label>
+            <input type="date" id="salt-cell-date">
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:10px 0;">
+
+        <h4 style="font-size:13px;margin:0 0 4px;">Daily Service Problems / Notes</h4>
+        <small>Document issues, warnings, customer requests, heater concerns, or follow-ups for this specific visit.</small>
+
+        <div class="grid">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="visit-problems">Problems / Info for This Visit</label>
+            <textarea id="visit-problems" placeholder="Example: Heater throwing LO code. Customer requested salt check next visit. Filter pressure rising."></textarea>
+          </div>
+        </div>
+
+        <div style="margin-top:6px; display:flex; gap:6px;">
+          <button id="add-visit-btn" class="small btn-primary" type="button">Add Visit</button>
+          <button id="clear-visit-form-btn" class="small btn-danger" type="button">Clear Form</button>
+        </div>
+        <small id="visit-form-status" style="display:block;margin-top:4px;color:#6b7280;"></small>
+      </div>
+
+      <!-- Visit History -->
+      <div class="section-card">
+        <h3>Visit History</h3>
+        <table class="visits-table" id="visits-table">
+          <thead>
+          <tr>
+            <th>Date</th>
+            <th>SpinTouch (key)</th>
+            <th>Taylor (key)</th>
+            <th>Notes</th>
+            <th>Meta</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- Rows added by JS -->
+          </tbody>
+        </table>
+        <div class="footer-note">
+          Only a few key values are shown in the table (FC / pH / Alk / CH / CYA / Salt / Phos). You can export all data to JSON.
+        </div>
+      </div>
+    </div>
+
+    <!-- Phosphates view -->
+    <div id="phos-view" style="display:none;">
+      <div class="section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <h2>Phosphate Readings – All Clients</h2>
+            <small>Each row is a recorded visit with its SpinTouch and Taylor phosphate levels.</small>
+          </div>
+          <button id="phos-back-btn" class="small btn-secondary" type="button">Back to Clients</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>All Phosphate Logs</h3>
+        <table class="visits-table" id="phos-table">
+          <thead>
+          <tr>
+            <th>Client</th>
+            <th>Service Day</th>
+            <th>Date</th>
+            <th>SpinTouch Phos</th>
+            <th>Taylor Phos</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- Rows built by JS -->
+          </tbody>
+        </table>
+        <div class="footer-note">
+          Sorted by service day, then client name, then date. Blank cells mean no phosphate value was entered for that test on that visit.
+        </div>
+      </div>
+    </div>
+
+    <!-- Calcium Hardness view -->
+    <div id="ch-view" style="display:none;">
+      <div class="section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <h2>Calcium Hardness – All Clients</h2>
+            <small>Each row is a recorded visit with its SpinTouch and Taylor CH (Calcium Hardness) levels.</small>
+          </div>
+          <button id="ch-back-btn" class="small btn-secondary" type="button">Back to Clients</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>All Calcium Hardness Logs</h3>
+        <table class="visits-table" id="ch-table">
+          <thead>
+          <tr>
+            <th>Client</th>
+            <th>Service Day</th>
+            <th>Date</th>
+            <th>SpinTouch CH</th>
+            <th>Taylor CH</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- Rows built by JS -->
+          </tbody>
+        </table>
+        <div class="footer-note">
+          Sorted by service day, then client name, then date. Blank cells mean no CH value was entered for that test on that visit.
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Chem Check view -->
+    <div id="daily-chem-view" style="display:none;">
+      <div class="section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <h2>Daily Chem Check – All Clients</h2>
+            <small>Chlorine (FC), pH, and Alkalinity from SpinTouch & Taylor for every recorded visit.</small>
+          </div>
+          <button id="daily-chem-back-btn" class="small btn-secondary" type="button">Back to Clients</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>All Daily Chem Logs</h3>
+        <table class="visits-table" id="daily-chem-table">
+          <thead>
+          <tr>
+            <th>Client</th>
+            <th>Service Day</th>
+            <th>Date</th>
+            <th>SpinTouch FC</th>
+            <th>Taylor FC</th>
+            <th>SpinTouch pH</th>
+            <th>Taylor pH</th>
+            <th>SpinTouch Alk</th>
+            <th>Taylor Alk</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- Rows built by JS -->
+          </tbody>
+        </table>
+        <div class="footer-note">
+          Sorted by service day, then client name, then date. Blank cells mean no value was entered for that test on that visit.
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW: Dosage Charts view -->
+    <div id="dosage-view" style="display:none;">
+      <div class="section-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div>
+            <h2>Dosage Charts & Targets</h2>
+            <small>Quick reference for Taylor-style ranges and basic dosing rules (rule-of-thumb only – always verify for each pool).</small>
+          </div>
+          <button id="dosage-back-btn" class="small btn-secondary" type="button">Back to Clients</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>Typical Recommended Ranges (Residential Pool)</h3>
+        <small>Use this as a general target. Adjust for special cases (heater manufacturer, plaster vs. vinyl, salt systems, etc.).</small>
+        <table class="visits-table" style="margin-top:8px;">
+          <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Target Range</th>
+            <th>Notes</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>Free Chlorine (FC)</td>
+            <td>2–4 ppm (many run 3–5)</td>
+            <td>Match to CYA level; don’t let it sit at 0.</td>
+          </tr>
+          <tr>
+            <td>pH</td>
+            <td>7.4–7.8 (7.2–7.8 acceptable)</td>
+            <td>Heater-friendly sweet spot ~7.4–7.6.</td>
+          </tr>
+          <tr>
+            <td>Total Alkalinity (TA)</td>
+            <td>80–120 ppm</td>
+            <td>Lower (70–90) is OK for salt with high aeration.</td>
+          </tr>
+          <tr>
+            <td>Calcium Hardness (CH)</td>
+            <td>200–400 ppm</td>
+            <td>Watch scaling risk if &gt; 400, especially with heaters.</td>
+          </tr>
+          <tr>
+            <td>Cyanuric Acid (CYA)</td>
+            <td>30–50 ppm (liquid CL) / 60–80 ppm (salt)</td>
+            <td>Too high CYA makes chlorine sluggish; may need water replacement.</td>
+          </tr>
+          <tr>
+            <td>Salt (SWG pools)</td>
+            <td>Per manufacturer, typically ~2700–3400 ppm</td>
+            <td>Trust the cell’s happy range more than generic charts.</td>
+          </tr>
+          <tr>
+            <td>Phosphates</td>
+            <td>&lt; 500 ppb</td>
+            <td>Many treat &gt; 1000 ppb, especially on problem pools.</td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="footer-note">
+          These are generic targets only. Always follow local code and equipment manufacturer recommendations.
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h3>Raise Alkalinity – Baking Soda (Sodium Bicarbonate)</h3>
+        <small>
+          Rule-of-thumb: <strong>1.5 lbs baking soda per 10,000 gallons raises TA by about 10 ppm.</strong><br>
+          Always add in smaller steps, circulate 6–24 hours, and retest.
+        </small>
+        <table class="visits-table" style="margin-top:8px;">
+          <thead>
+          <tr>
+            <th>Pool Volume</th>
+            <th>+10 ppm TA</th>
+            <th>+20 ppm TA</th>
+            <th>+30 ppm TA</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>10,000 gal</td>
+            <td>1.5 lbs</td>
+            <td>3.0 lbs</td>
+            <td>4.5 lbs</td>
+          </tr>
+          <tr>
+            <td>15,000 gal</td>
+            <td>2.25 lbs</td>
+            <td>4.5 lbs</td>
+            <td>6.75 lbs</td>
+          </tr>
+          <tr>
+            <td>20,000 gal</td>
+            <td>3.0 lbs</td>
+            <td>6.0 lbs</td>
+            <td>9.0 lbs</td>
+          </tr>
+          <tr>
+            <td>25,000 gal</td>
+            <td>3.75 lbs</td>
+            <td>7.5 lbs</td>
+            <td>11.25 lbs</td>
+          </tr>
+          </tbody>
+        </table>
+        <ul style="font-size:11px;margin-top:6px;">
+          <li>Broadcast around the pool, don’t dump in one spot or skimmer.</li>
+          <li>Run pump 6–24 hours and retest TA and pH.</li>
+          <li>If you’re unsure, start with half the amount, then creep up.</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h3>Notes / Future Charts</h3>
+        <small>You can expand this page later with:</small>
+        <ul style="font-size:12px;margin-top:6px;">
+          <li>“How much acid to lower pH” quick reference.</li>
+          <li>“How much calcium chloride to raise CH.”</li>
+          <li>“Heater-safe CSI range” guide.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Lee Assistant view -->
+    <div id="assistant-view" style="display:none;">
+      <div class="section-card">
+        <h2>Lee Assistant – Pool Problem Solver</h2>
+        <small>
+          This uses your <strong>OpenAI API key</strong> to talk to Lee directly from inside Dragoo Services.
+          Keep your key private. It is stored only in this browser.
+        </small>
+        <div class="grid" style="margin-top:8px;">
+          <div class="field">
+            <label for="assistant-api-key">OpenAI API key (starts with "sk-")</label>
+            <input type="password" id="assistant-api-key" placeholder="Paste your OpenAI API key here">
+          </div>
+        </div>
+        <small class="footer-note">
+          To get a key: log into your OpenAI account → API section → create a secret key. Usage there is billed by OpenAI, not this app.
+        </small>
+      </div>
+
+      <div class="section-card">
+        <h3>Ask Lee about a pool issue</h3>
+        <small>
+          Describe the pool, test results (SpinTouch + Taylor), equipment, and the problem.
+          Example: "14k gallon plaster pool, salt system, SpinTouch: FC 1.2, pH 8.1..."
+        </small>
+        <div class="grid" style="margin-top:8px;">
+          <div class="field" style="grid-column:1 / -1;">
+            <label for="assistant-prompt">Your question</label>
+            <textarea id="assistant-prompt" placeholder="Type your pool problem here..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+          <button id="assistant-send-btn" class="small btn-primary" type="button">Ask Lee</button>
+          <button id="assistant-clear-btn" class="small btn-secondary" type="button">Clear Conversation</button>
+          <button id="assistant-back-btn" class="small btn-secondary" type="button">Back to Clients</button>
+        </div>
+        <small id="assistant-status"></small>
+      </div>
+
+      <div class="section-card">
+        <h3>Conversation</h3>
+        <div id="assistant-messages">
+          <!-- Chat messages appear here -->
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Simple in-browser database
+  let db = {
+    clients: [],   // { id, name, address, notes, routeDay, sortOrder }
+    visits: []     // { id, clientId, date, notes, problems, filterCleanDate, saltCellDate, spinTouch:{...}, taylor:{...} }
+  };
+
+  let currentClientId = null;
+  const STORAGE_KEY = 'dragoo_services_db_v1';
+  const ROUTE_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+  // Filter state: 'ALL' or 'TODAY'
+  let currentFilterMode = 'ALL';
+
+  // Drag/drop state
+  let draggedClientId = null;
+
+  // Lee Assistant state
+  let assistantMessages = []; // { role: 'user'|'assistant', content: string }
+  let openAiApiKey = '';      // stored in localStorage for convenience
+  const OPENAI_KEY_STORAGE = 'dragoo_openai_key';
+
+  function uuid() {
+    return 'xxxxxx'.replace(/x/g, () =>
+      Math.floor(Math.random() * 16).toString(16)
+    ) + Date.now().toString(16);
+  }
+
+  function getTodayFullWeekdayName() {
+    const d = new Date().getDay();
+    switch (d) {
+      case 0: return 'Sunday';
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      case 6: return 'Saturday';
+      default: return '';
+    }
+  }
+
+  // For route days we only use Mon–Fri
+  function getTodayRouteDayName() {
+    const d = new Date().getDay(); // 0=Sun,1=Mon,...6=Sat
+    switch (d) {
+      case 1: return 'Monday';
+      case 2: return 'Tuesday';
+      case 3: return 'Wednesday';
+      case 4: return 'Thursday';
+      case 5: return 'Friday';
+      default: return null; // Sat/Sun have no standard route day
+    }
+  }
+
+  function updateFilterUI() {
+    const label = document.getElementById('clients-filter-label');
+    const todayBtn = document.getElementById('today-route-btn');
+
+    if (currentFilterMode === 'ALL') {
+      label.textContent = 'Showing: All route days';
+      todayBtn.classList.remove('btn-primary');
+      todayBtn.classList.add('btn-secondary');
+    } else {
+      const full = getTodayFullWeekdayName();
+      const routeDay = getTodayRouteDayName();
+      if (routeDay) {
+        label.textContent = `Showing: Today’s Route (${routeDay})`;
+      } else {
+        label.textContent = `Showing: All route days (today is ${full} – no standard route day set)`;
+      }
+      todayBtn.classList.remove('btn-secondary');
+      todayBtn.classList.add('btn-primary');
+    }
+  }
+
+  function saveDb() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    } catch (e) {
+      console.error('Save error', e);
+      alert('Could not save to local storage. (Storage may be full or disabled.)');
+    }
+  }
+
+  function loadDb() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        db = parsed;
+      }
+    } catch (e) {
+      console.error('Load error', e);
+    }
+  }
+
+  // Ensure every client has a sortOrder, grouped by routeDay
+  function ensureSortOrders() {
+    const groups = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Unassigned: []
+    };
+
+    db.clients.forEach(client => {
+      const day = client.routeDay && ROUTE_DAYS.includes(client.routeDay)
+        ? client.routeDay
+        : 'Unassigned';
+      groups[day].push(client);
+    });
+
+    Object.keys(groups).forEach(day => {
+      const list = groups[day];
+
+      list.sort((a, b) => {
+        const ao = (typeof a.sortOrder === 'number') ? a.sortOrder : Number.MAX_SAFE_INTEGER;
+        const bo = (typeof b.sortOrder === 'number') ? b.sortOrder : Number.MAX_SAFE_INTEGER;
+        if (ao !== bo) return ao - bo;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+      list.forEach((client, index) => {
+        client.sortOrder = index;
+      });
+    });
+  }
+
+  function renderClientsList() {
+    const container = document.getElementById('clients-list');
+    container.innerHTML = '';
+
+    if (db.clients.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:#6b7280;padding:6px 10px;">No clients yet. Add one below.</div>';
+      return;
+    }
+
+    // Determine filter day (Mon–Fri) if in TODAY mode
+    let routeDayFilter = null;
+    if (currentFilterMode === 'TODAY') {
+      routeDayFilter = getTodayRouteDayName(); // null on weekend
+    }
+
+    // Group clients by routeDay
+    const groups = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Unassigned: []
+    };
+
+    db.clients.forEach(client => {
+      const day = client.routeDay && ROUTE_DAYS.includes(client.routeDay)
+        ? client.routeDay
+        : 'Unassigned';
+      groups[day].push(client);
+    });
+
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Unassigned'];
+
+    dayOrder.forEach(day => {
+      const list = groups[day];
+      if (!list.length) return;
+
+      // If filtering to today's route and we have a weekday, only show that day
+      if (routeDayFilter && day !== routeDayFilter) return;
+
+      // Day header
+      const header = document.createElement('div');
+      header.className = 'route-day-header';
+      header.textContent = day === 'Unassigned' ? 'Unassigned / No Route Day' : day;
+
+      // Enable drag-over / drop on header (drop to end of this day)
+      header.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        header.classList.add('drag-over');
+      });
+      header.addEventListener('dragleave', () => {
+        header.classList.remove('drag-over');
+      });
+      header.addEventListener('drop', (e) => {
+        e.preventDefault();
+        header.classList.remove('drag-over');
+        handleClientDrop(null, day);
+      });
+
+      container.appendChild(header);
+
+      // Sort clients in this day by sortOrder, then name
+      list
+        .slice()
+        .sort((a, b) => {
+          const ao = (typeof a.sortOrder === 'number') ? a.sortOrder : 0;
+          const bo = (typeof b.sortOrder === 'number') ? b.sortOrder : 0;
+          if (ao !== bo) return ao - bo;
+          return (a.name || '').localeCompare(b.name || '');
+        })
+        .forEach(client => {
+          const item = document.createElement('div');
+          item.className = 'client-item' + (client.id === currentClientId ? ' active' : '');
+          item.dataset.id = client.id;
+          item.draggable = true;
+
+          const nameRow = document.createElement('div');
+          nameRow.className = 'client-name-row';
+
+          const name = document.createElement('div');
+          name.textContent = client.name || '(No name)';
+
+          const dayPill = document.createElement('span');
+          dayPill.className = 'client-day-pill';
+          dayPill.textContent = client.routeDay || 'Unassigned';
+
+          nameRow.appendChild(name);
+          nameRow.appendChild(dayPill);
+
+          const meta = document.createElement('div');
+          meta.className = 'client-meta';
+          const visitCount = db.visits.filter(v => v.clientId === client.id).length;
+          meta.textContent = (client.address || '') + (visitCount ? ' • ' + visitCount + ' visits' : '');
+
+          item.appendChild(nameRow);
+          item.appendChild(meta);
+
+          // Click to select client
+          item.addEventListener('click', () => {
+            selectClient(client.id);
+          });
+
+          // Drag events
+          item.addEventListener('dragstart', (e) => {
+            draggedClientId = client.id;
+            e.dataTransfer.effectAllowed = 'move';
+          });
+
+          item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            item.classList.add('drag-over');
+          });
+
+          item.addEventListener('dragleave', () => {
+            item.classList.remove('drag-over');
+          });
+
+          item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            handleClientDrop(client.id, day);
+          });
+
+          container.appendChild(item);
+        });
+    });
+  }
+
+  function handleClientDrop(targetClientId, targetDayLabel) {
+    if (!draggedClientId) return;
+    if (draggedClientId === targetClientId) {
+      draggedClientId = null;
+      return;
+    }
+
+    const dragged = db.clients.find(c => c.id === draggedClientId);
+    if (!dragged) {
+      draggedClientId = null;
+      return;
+    }
+
+    // Determine destination day label
+    let destDayLabel = targetDayLabel;
+    if (!destDayLabel && targetClientId) {
+      const targetClient = db.clients.find(c => c.id === targetClientId);
+      if (targetClient) {
+        destDayLabel = targetClient.routeDay && ROUTE_DAYS.includes(targetClient.routeDay)
+          ? targetClient.routeDay
+          : 'Unassigned';
+      }
+    }
+
+    if (!destDayLabel) {
+      // Fallback: keep same day
+      destDayLabel = dragged.routeDay && ROUTE_DAYS.includes(dragged.routeDay)
+        ? dragged.routeDay
+        : 'Unassigned';
+    }
+
+    const destDayKey = ROUTE_DAYS.includes(destDayLabel) ? destDayLabel : 'Unassigned';
+
+    // Build list for destination day (excluding dragged for now)
+    const destList = db.clients.filter(c => {
+      const day = c.routeDay && ROUTE_DAYS.includes(c.routeDay) ? c.routeDay : 'Unassigned';
+      return day === destDayKey && c.id !== draggedClientId;
+    });
+
+    // Sort by existing sortOrder
+    destList.sort((a, b) => {
+      const ao = (typeof a.sortOrder === 'number') ? a.sortOrder : 0;
+      const bo = (typeof b.sortOrder === 'number') ? b.sortOrder : 0;
+      if (ao !== bo) return ao - bo;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    // Determine insertion index
+    let insertIndex = destList.length;
+    if (targetClientId) {
+      const idx = destList.findIndex(c => c.id === targetClientId);
+      if (idx !== -1) insertIndex = idx;
+    }
+
+    destList.splice(insertIndex, 0, dragged);
+
+    // Update dragged client routeDay (cross-day move)
+    dragged.routeDay = destDayKey === 'Unassigned' ? '' : destDayKey;
+
+    // Re-assign sortOrder for destination list
+    destList.forEach((c, index) => {
+      c.sortOrder = index;
+    });
+
+    // Normalize all other days too
+    ensureSortOrders();
+    saveDb();
+    renderClientsList();
+
+    if (dragged.id) {
+      selectClient(dragged.id);
+    }
+
+    draggedClientId = null;
+  }
+
+  function showWelcomeOrClient() {
+    const welcome = document.getElementById('welcome');
+    const detail = document.getElementById('client-detail');
+    const phos = document.getElementById('phos-view');
+    const dailyChem = document.getElementById('daily-chem-view');
+    const chView = document.getElementById('ch-view');
+    const dosageView = document.getElementById('dosage-view');
+    const assistantView = document.getElementById('assistant-view');
+
+    phos.style.display = 'none';
+    dailyChem.style.display = 'none';
+    chView.style.display = 'none';
+    dosageView.style.display = 'none';
+    assistantView.style.display = 'none';
+
+    if (currentClientId) {
+      welcome.style.display = 'none';
+      detail.style.display = 'block';
+    } else {
+      detail.style.display = 'none';
+      welcome.style.display = 'block';
+    }
+  }
+
+  function selectClient(id) {
+    currentClientId = id;
+    const client = db.clients.find(c => c.id === id);
+    if (!client) return;
+
+    document.getElementById('phos-view').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'none';
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'block';
+
+    // Fill detail header
+    document.getElementById('client-detail-name').textContent = client.name || '(No name)';
+    document.getElementById('client-detail-address').textContent = client.address || '';
+    document.getElementById('client-detail-notes').textContent = client.notes || '';
+    document.getElementById('client-detail-day').textContent = client.routeDay || 'Unassigned';
+
+    // Fill client form for editing
+    document.getElementById('client-name').value = client.name || '';
+    document.getElementById('client-address').value = client.address || '';
+    document.getElementById('client-notes').value = client.notes || '';
+    document.getElementById('client-day').value = client.routeDay || '';
+    document.getElementById('client-form-status').textContent = 'Editing existing client.';
+    document.getElementById('delete-client-btn').style.display = 'inline-block';
+
+    // Render visits (also updates cleaning badges)
+    renderVisitsTable();
+
+    // Re-render client list highlight
+    renderClientsList();
+  }
+
+  function updateCleaningBadges(visits) {
+    const filterBadge = document.getElementById('last-filter-clean-badge');
+    const saltBadge = document.getElementById('last-salt-clean-badge');
+
+    if (!filterBadge || !saltBadge) return;
+
+    let lastFilter = null;
+    let lastSalt = null;
+
+    visits.forEach(v => {
+      if (v.filterCleanDate) {
+        if (!lastFilter || v.filterCleanDate > lastFilter) {
+          lastFilter = v.filterCleanDate;
+        }
+      }
+      if (v.saltCellDate) {
+        if (!lastSalt || v.saltCellDate > lastSalt) {
+          lastSalt = v.saltCellDate;
+        }
+      }
+    });
+
+    filterBadge.textContent = 'Last filter cleaned: ' + (lastFilter || '—');
+    saltBadge.textContent = 'Last salt cell cleaned: ' + (lastSalt || '—');
+  }
+
+  function renderVisitsTable() {
+    const tbody = document.querySelector('#visits-table tbody');
+    tbody.innerHTML = '';
+
+    if (!currentClientId) {
+      updateCleaningBadges([]);
+      return;
+    }
+
+    const visits = db.visits
+      .filter(v => v.clientId === currentClientId)
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // Update badges based on all visits for this client
+    updateCleaningBadges(visits);
+
+    if (visits.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No visits recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    visits.forEach(v => {
+      const row = document.createElement('tr');
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = v.date || '';
+      row.appendChild(tdDate);
+
+      // SpinTouch summary
+      const tdSt = document.createElement('td');
+      if (v.spinTouch) {
+        const s = v.spinTouch;
+        tdSt.innerHTML = `
+          <span class="tag tag-spin">SpinTouch</span><br>
+          FC: ${s.fc ?? ''} &nbsp; pH: ${s.ph ?? ''}<br>
+          Alk: ${s.alk ?? ''} &nbsp; CH: ${s.ch ?? ''}<br>
+          CYA: ${s.cya ?? ''} &nbsp; Salt: ${s.salt ?? ''}<br>
+          Phos: ${s.phos ?? ''}
+        `;
+      } else {
+        tdSt.textContent = '—';
+      }
+      row.appendChild(tdSt);
+
+      // Taylor summary
+      const tdTy = document.createElement('td');
+      if (v.taylor) {
+        const t = v.taylor;
+        tdTy.innerHTML = `
+          <span class="tag tag-taylor">Taylor</span><br>
+          FC: ${t.fc ?? ''} &nbsp; pH: ${t.ph ?? ''}<br>
+          Alk: ${t.alk ?? ''} &nbsp; CH: ${t.ch ?? ''}<br>
+          CYA: ${t.cya ?? ''} &nbsp; Salt: ${t.salt ?? ''}<br>
+          Phos: ${t.phos ?? ''}
+        `;
+      } else {
+        tdTy.textContent = '—';
+      }
+      row.appendChild(tdTy);
+
+      // Notes & problems & cleanings
+      const tdNotes = document.createElement('td');
+      tdNotes.innerHTML = `
+        ${v.notes ? `<strong>General:</strong> ${v.notes}<br>` : ''}
+        ${v.problems ? `<strong>Problems:</strong> ${v.problems}<br>` : ''}
+        ${v.filterCleanDate ? `<strong>Filter cleaned:</strong> ${v.filterCleanDate}<br>` : ''}
+        ${v.saltCellDate ? `<strong>Salt cell cleaned:</strong> ${v.saltCellDate}` : ''}
+      `;
+      row.appendChild(tdNotes);
+
+      // Meta
+      const tdMeta = document.createElement('td');
+      tdMeta.innerHTML = `
+        <span class="pill pill-date">${v.date || ''}</span>
+        <span class="pill pill-visit-id">ID: ${v.id.slice(0,6)}</span>
+      `;
+      row.appendChild(tdMeta);
+
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderPhosTable() {
+    const tbody = document.querySelector('#phos-table tbody');
+    tbody.innerHTML = '';
+
+    if (!db.visits.length || !db.clients.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No phosphate readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    const rows = db.visits
+      .map(v => {
+        const client = db.clients.find(c => c.id === v.clientId);
+        if (!client) return null;
+        const stPhos = v.spinTouch && v.spinTouch.phos != null ? v.spinTouch.phos : '';
+        const tyPhos = v.taylor && v.taylor.phos != null ? v.taylor.phos : '';
+        const day = client.routeDay && ROUTE_DAYS.includes(client.routeDay)
+          ? client.routeDay
+          : 'Unassigned';
+        return {
+          clientName: client.name || '(No name)',
+          routeDay: day,
+          date: v.date || '',
+          stPhos,
+          tyPhos
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const dayIndex = (d) => {
+          const idx = ROUTE_DAYS.indexOf(d);
+          return idx === -1 ? 99 : idx;
+        };
+        const dayCmp = dayIndex(a.routeDay) - dayIndex(b.routeDay);
+        if (dayCmp !== 0) return dayCmp;
+        const nameCmp = a.clientName.localeCompare(b.clientName);
+        if (nameCmp !== 0) return nameCmp;
+        return (a.date || '').localeCompare(b.date || '');
+      });
+
+    if (rows.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No phosphate readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    rows.forEach(r => {
+      const row = document.createElement('tr');
+
+      const tdClient = document.createElement('td');
+      tdClient.textContent = r.clientName;
+      row.appendChild(tdClient);
+
+      const tdDay = document.createElement('td');
+      tdDay.textContent = r.routeDay;
+      row.appendChild(tdDay);
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = r.date;
+      row.appendChild(tdDate);
+
+      const tdSt = document.createElement('td');
+      tdSt.textContent = r.stPhos === '' ? '' : r.stPhos;
+      row.appendChild(tdSt);
+
+      const tdTy = document.createElement('td');
+      tdTy.textContent = r.tyPhos === '' ? '' : r.tyPhos;
+      row.appendChild(tdTy);
+
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderChTable() {
+    const tbody = document.querySelector('#ch-table tbody');
+    tbody.innerHTML = '';
+
+    if (!db.visits.length || !db.clients.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No calcium hardness readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    const rows = db.visits
+      .map(v => {
+        const client = db.clients.find(c => c.id === v.clientId);
+        if (!client) return null;
+        const stCh = v.spinTouch && v.spinTouch.ch != null ? v.spinTouch.ch : '';
+        const tyCh = v.taylor && v.taylor.ch != null ? v.taylor.ch : '';
+        const day = client.routeDay && ROUTE_DAYS.includes(client.routeDay)
+          ? client.routeDay
+          : 'Unassigned';
+        return {
+          clientName: client.name || '(No name)',
+          routeDay: day,
+          date: v.date || '',
+          stCh,
+          tyCh
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const dayIndex = (d) => {
+          const idx = ROUTE_DAYS.indexOf(d);
+          return idx === -1 ? 99 : idx;
+        };
+        const dayCmp = dayIndex(a.routeDay) - dayIndex(b.routeDay);
+        if (dayCmp !== 0) return dayCmp;
+        const nameCmp = a.clientName.localeCompare(b.clientName);
+        if (nameCmp !== 0) return nameCmp;
+        return (a.date || '').localeCompare(b.date || '');
+      });
+
+    if (rows.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No calcium hardness readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    rows.forEach(r => {
+      const row = document.createElement('tr');
+
+      const tdClient = document.createElement('td');
+      tdClient.textContent = r.clientName;
+      row.appendChild(tdClient);
+
+      const tdDay = document.createElement('td');
+      tdDay.textContent = r.routeDay;
+      row.appendChild(tdDay);
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = r.date;
+      row.appendChild(tdDate);
+
+      const tdSt = document.createElement('td');
+      tdSt.textContent = r.stCh === '' ? '' : r.stCh;
+      row.appendChild(tdSt);
+
+      const tdTy = document.createElement('td');
+      tdTy.textContent = r.tyCh === '' ? '' : r.tyCh;
+      row.appendChild(tdTy);
+
+      tbody.appendChild(row);
+    });
+  }
+
+  function renderDailyChemTable() {
+    const tbody = document.querySelector('#daily-chem-table tbody');
+    tbody.innerHTML = '';
+
+    if (!db.visits.length || !db.clients.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 9;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No chemistry readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    const rows = db.visits
+      .map(v => {
+        const client = db.clients.find(c => c.id === v.clientId);
+        if (!client) return null;
+
+        const st = v.spinTouch || {};
+        const ty = v.taylor || {};
+
+        const day = client.routeDay && ROUTE_DAYS.includes(client.routeDay)
+          ? client.routeDay
+          : 'Unassigned';
+
+        return {
+          clientName: client.name || '(No name)',
+          routeDay: day,
+          date: v.date || '',
+          stFc: st.fc != null ? st.fc : '',
+          tyFc: ty.fc != null ? ty.fc : '',
+          stPh: st.ph != null ? st.ph : '',
+          tyPh: ty.ph != null ? ty.ph : '',
+          stAlk: st.alk != null ? st.alk : '',
+          tyAlk: ty.alk != null ? ty.alk : ''
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const dayIndex = (d) => {
+          const idx = ROUTE_DAYS.indexOf(d);
+          return idx === -1 ? 99 : idx;
+        };
+        const dayCmp = dayIndex(a.routeDay) - dayIndex(b.routeDay);
+        if (dayCmp !== 0) return dayCmp;
+        const nameCmp = a.clientName.localeCompare(b.clientName);
+        if (nameCmp !== 0) return nameCmp;
+        return (a.date || '').localeCompare(b.date || '');
+      });
+
+    if (rows.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 9;
+      cell.style.fontSize = '12px';
+      cell.style.color = '#6b7280';
+      cell.textContent = 'No chemistry readings recorded yet.';
+      row.appendChild(cell);
+      tbody.appendChild(row);
+      return;
+    }
+
+    rows.forEach(r => {
+      const row = document.createElement('tr');
+
+      const tdClient = document.createElement('td');
+      tdClient.textContent = r.clientName;
+      row.appendChild(tdClient);
+
+      const tdDay = document.createElement('td');
+      tdDay.textContent = r.routeDay;
+      row.appendChild(tdDay);
+
+      const tdDate = document.createElement('td');
+      tdDate.textContent = r.date;
+      row.appendChild(tdDate);
+
+      const tdStFc = document.createElement('td');
+      tdStFc.textContent = r.stFc;
+      row.appendChild(tdStFc);
+
+      const tdTyFc = document.createElement('td');
+      tdTyFc.textContent = r.tyFc;
+      row.appendChild(tdTyFc);
+
+      const tdStPh = document.createElement('td');
+      tdStPh.textContent = r.stPh;
+      row.appendChild(tdStPh);
+
+      const tdTyPh = document.createElement('td');
+      tdTyPh.textContent = r.tyPh;
+      row.appendChild(tdTyPh);
+
+      const tdStAlk = document.createElement('td');
+      tdStAlk.textContent = r.stAlk;
+      row.appendChild(tdStAlk);
+
+      const tdTyAlk = document.createElement('td');
+      tdTyAlk.textContent = r.tyAlk;
+      row.appendChild(tdTyAlk);
+
+      tbody.appendChild(row);
+    });
+  }
+
+  function clearClientForm() {
+    currentClientId = null;
+    document.getElementById('client-name').value = '';
+    document.getElementById('client-address').value = '';
+    document.getElementById('client-notes').value = '';
+    document.getElementById('client-day').value = '';
+    document.getElementById('client-form-status').textContent = 'Creating new client.';
+    document.getElementById('delete-client-btn').style.display = 'none';
+    showWelcomeOrClient();
+    renderClientsList();
+    // reset badges when no client
+    updateCleaningBadges([]);
+  }
+
+  function saveClient() {
+    const name = document.getElementById('client-name').value.trim();
+    const address = document.getElementById('client-address').value.trim();
+    const notes = document.getElementById('client-notes').value.trim();
+    const routeDay = document.getElementById('client-day').value;
+
+    if (!name) {
+      alert('Client name is required.');
+      return;
+    }
+
+    if (currentClientId) {
+      // Update existing
+      const client = db.clients.find(c => c.id === currentClientId);
+      if (!client) return;
+      client.name = name;
+      client.address = address;
+      client.notes = notes;
+      client.routeDay = routeDay || '';
+      document.getElementById('client-form-status').textContent = 'Client updated.';
+    } else {
+      // New client
+      const newClient = {
+        id: uuid(),
+        name,
+        address,
+        notes,
+        routeDay: routeDay || '',
+        sortOrder: 9999 // will be normalized
+      };
+      db.clients.push(newClient);
+      currentClientId = newClient.id;
+      document.getElementById('client-form-status').textContent = 'Client created.';
+    }
+
+    ensureSortOrders();
+    saveDb();
+    renderClientsList();
+    updateFilterUI();
+    if (currentClientId) selectClient(currentClientId);
+  }
+
+  function deleteClient() {
+    if (!currentClientId) {
+      alert('No client selected.');
+      return;
+    }
+    const client = db.clients.find(c => c.id === currentClientId);
+    const name = client?.name || 'this client';
+
+    const ok = confirm(`Delete "${name}" and ALL its visits? This cannot be undone.`);
+    if (!ok) return;
+
+    // Remove visits for this client
+    db.visits = db.visits.filter(v => v.clientId !== currentClientId);
+    // Remove client
+    db.clients = db.clients.filter(c => c.id !== currentClientId);
+
+    currentClientId = null;
+    ensureSortOrders();
+    saveDb();
+    renderClientsList();
+    updateFilterUI();
+
+    // Reset UI
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('welcome').style.display = 'block';
+    document.getElementById('delete-client-btn').style.display = 'none';
+    document.getElementById('client-form-status').textContent = 'Client deleted.';
+    document.getElementById('client-name').value = '';
+    document.getElementById('client-address').value = '';
+    document.getElementById('client-notes').value = '';
+    document.getElementById('client-day').value = '';
+    updateCleaningBadges([]);
+  }
+
+  function clearVisitForm() {
+    document.getElementById('visit-date').value = '';
+    document.getElementById('visit-notes').value = '';
+    document.getElementById('visit-problems').value = '';
+    document.getElementById('filter-clean-date').value = '';
+    document.getElementById('salt-cell-date').value = '';
+
+    const ids = [
+      'st-fc','st-ph','st-alk','st-ch','st-cya','st-salt','st-phos',
+      'ty-fc','ty-ph','ty-alk','ty-ch','ty-cya','ty-salt','ty-phos'
+    ];
+    ids.forEach(id => document.getElementById(id).value = '');
+    document.getElementById('visit-form-status').textContent = '';
+  }
+
+  function addVisit() {
+    if (!currentClientId) {
+      alert('Select a client first.');
+      return;
+    }
+
+    const date = document.getElementById('visit-date').value || '';
+    const notes = document.getElementById('visit-notes').value.trim();
+    const problems = document.getElementById('visit-problems').value.trim();
+    const filterCleanDate = document.getElementById('filter-clean-date').value || '';
+    const saltCellDate = document.getElementById('salt-cell-date').value || '';
+
+    // Helper to grab number or null
+    function numOrNull(id) {
+      const v = document.getElementById(id).value;
+      if (v === '' || v === null || v === undefined) return null;
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    }
+
+    const st = {
+      fc: numOrNull('st-fc'),
+      ph: numOrNull('st-ph'),
+      alk: numOrNull('st-alk'),
+      ch: numOrNull('st-ch'),
+      cya: numOrNull('st-cya'),
+      salt: numOrNull('st-salt'),
+      phos: numOrNull('st-phos')
+    };
+    const ty = {
+      fc: numOrNull('ty-fc'),
+      ph: numOrNull('ty-ph'),
+      alk: numOrNull('ty-alk'),
+      ch: numOrNull('ty-ch'),
+      cya: numOrNull('ty-cya'),
+      salt: numOrNull('ty-salt'),
+      phos: numOrNull('ty-phos')
+    };
+
+    // Check if at least something was entered
+    const hasSt = Object.values(st).some(v => v !== null);
+    const hasTy = Object.values(ty).some(v => v !== null);
+
+    if (!date) {
+      if (!confirm('No date set. Add visit with blank date?')) {
+        return;
+      }
+    }
+
+    if (!hasSt && !hasTy && !notes && !problems && !saltCellDate && !filterCleanDate) {
+      alert('No SpinTouch, Taylor, notes, problems, filter cleaning, or salt cell date entered. Nothing to save.');
+      return;
+    }
+
+    const visit = {
+      id: uuid(),
+      clientId: currentClientId,
+      date: date,
+      notes: notes,
+      problems: problems,
+      filterCleanDate: filterCleanDate || null,
+      saltCellDate: saltCellDate || null,
+      spinTouch: hasSt ? st : null,
+      taylor: hasTy ? ty : null
+    };
+
+    db.visits.push(visit);
+    saveDb();
+    renderVisitsTable(); // also updates badges
+    clearVisitForm();
+    document.getElementById('visit-form-status').textContent = 'Visit saved.';
+  }
+
+  function exportData() {
+    const json = JSON.stringify(db, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0,10);
+    a.href = url;
+    a.download = `dragoo_services_backup_${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!parsed || typeof parsed !== 'object') {
+          alert('Invalid JSON file.');
+          return;
+        }
+        if (!Array.isArray(parsed.clients) || !Array.isArray(parsed.visits)) {
+          if (!confirm('File does not look like a Dragoo Services backup. Import anyway?')) {
+            return;
+          }
+        }
+        db = parsed;
+        currentClientId = null;
+        ensureSortOrders();
+        saveDb();
+        renderClientsList();
+        updateFilterUI();
+        document.getElementById('phos-view').style.display = 'none';
+        document.getElementById('daily-chem-view').style.display = 'none';
+        document.getElementById('ch-view').style.display = 'none';
+        document.getElementById('dosage-view').style.display = 'none';
+        document.getElementById('assistant-view').style.display = 'none';
+        document.getElementById('client-detail').style.display = 'none';
+        document.getElementById('welcome').style.display = 'block';
+        updateCleaningBadges([]);
+        alert('Import complete.');
+      } catch (err) {
+        console.error(err);
+        alert('Error reading JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function showPhosView() {
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'none';
+    document.getElementById('phos-view').style.display = 'block';
+    renderPhosTable();
+  }
+
+  function showChView() {
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'none';
+    document.getElementById('phos-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'block';
+    renderChTable();
+  }
+
+  function showDailyChemView() {
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('phos-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'block';
+    renderDailyChemTable();
+  }
+
+  function showDosageView() {
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('phos-view').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'block';
+  }
+
+  function hideSummaryViews() {
+    showWelcomeOrClient();
+  }
+
+  // Lee Assistant rendering
+  function renderAssistantMessages() {
+    const container = document.getElementById('assistant-messages');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (assistantMessages.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:#6b7280;">No messages yet. Ask Lee a question above.</div>';
+      return;
+    }
+
+    assistantMessages.forEach(msg => {
+      const row = document.createElement('div');
+      row.className = 'assistant-row';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'assistant-msg ' + (msg.role === 'user' ? 'assistant-msg-user' : 'assistant-msg-assistant');
+
+      const role = document.createElement('div');
+      role.className = 'assistant-msg-role';
+      role.textContent = msg.role === 'user' ? 'You' : 'Lee';
+
+      const content = document.createElement('div');
+      content.textContent = msg.content;
+
+      bubble.appendChild(role);
+      bubble.appendChild(content);
+      row.appendChild(bubble);
+      container.appendChild(row);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function showAssistantView() {
+    document.getElementById('welcome').style.display = 'none';
+    document.getElementById('client-detail').style.display = 'none';
+    document.getElementById('phos-view').style.display = 'none';
+    document.getElementById('daily-chem-view').style.display = 'none';
+    document.getElementById('ch-view').style.display = 'none';
+    document.getElementById('dosage-view').style.display = 'none';
+    document.getElementById('assistant-view').style.display = 'block';
+    renderAssistantMessages();
+  }
+
+  async function sendAssistantMessage() {
+    const promptEl = document.getElementById('assistant-prompt');
+    const statusEl = document.getElementById('assistant-status');
+    const keyInput = document.getElementById('assistant-api-key');
+
+    if (!promptEl || !statusEl || !keyInput) return;
+
+    const key = keyInput.value.trim();
+    const prompt = promptEl.value.trim();
+
+    if (!key) {
+      statusEl.textContent = 'Please paste your OpenAI API key first.';
+      return;
+    }
+    if (!prompt) {
+      statusEl.textContent = 'Type a question first.';
+      return;
+    }
+
+    // Save key locally for convenience
+    openAiApiKey = key;
+    try {
+      localStorage.setItem(OPENAI_KEY_STORAGE, openAiApiKey);
+    } catch (e) {
+      console.warn('Could not store API key in localStorage.', e);
+    }
+
+    // Add user message to history
+    assistantMessages.push({ role: 'user', content: prompt });
+    renderAssistantMessages();
+    promptEl.value = '';
+    statusEl.textContent = 'Asking Lee...';
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + openAiApiKey
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-mini',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are Lee, a pool service expert helping Darrell from Dragoo Services in Texas. ' +
+                'Give clear, practical, step-by-step instructions he can use in the field. ' +
+                'Focus on residential pools, SpinTouch vs Taylor test kits, salt systems, heaters, phosphates, and safe ranges. ' +
+                'Assume he already knows basics; skip fluff.'
+            },
+            ...assistantMessages.map(m => ({ role: m.role, content: m.content }))
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        console.error('OpenAI error', response.status, await response.text());
+        statusEl.textContent = 'Error from OpenAI API. Check your key and usage limits.';
+        return;
+      }
+
+      const data = await response.json();
+      const answer = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+        ? data.choices[0].message.content
+        : 'No response content.';
+
+      assistantMessages.push({ role: 'assistant', content: answer });
+      renderAssistantMessages();
+      statusEl.textContent = 'Answer received.';
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = 'Network error talking to OpenAI. Check connection.';
+    }
+  }
+
+  function clearAssistantConversation() {
+    assistantMessages = [];
+    renderAssistantMessages();
+    const statusEl = document.getElementById('assistant-status');
+    if (statusEl) statusEl.textContent = 'Conversation cleared.';
+  }
+
+  // Event wiring
+  window.addEventListener('DOMContentLoaded', () => {
+    loadDb();
+    ensureSortOrders();
+    renderClientsList();
+    updateFilterUI();
+
+    document.getElementById('client-form-status').textContent = 'Creating new client.';
+    updateCleaningBadges([]);
+
+    // Default visit date = today
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('visit-date').value = today;
+
+    document.getElementById('save-client-btn').addEventListener('click', saveClient);
+    document.getElementById('new-client-btn').addEventListener('click', clearClientForm);
+    document.getElementById('delete-client-btn').addEventListener('click', deleteClient);
+
+    document.getElementById('add-visit-btn').addEventListener('click', addVisit);
+    document.getElementById('clear-visit-form-btn').addEventListener('click', clearVisitForm);
+
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!confirm('Import this backup and replace current data?')) {
+        e.target.value = '';
+        return;
+      }
+      importData(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('phos-view-btn').addEventListener('click', showPhosView);
+    document.getElementById('phos-back-btn').addEventListener('click', hideSummaryViews);
+
+    document.getElementById('ch-view-btn').addEventListener('click', showChView);
+    document.getElementById('ch-back-btn').addEventListener('click', hideSummaryViews);
+
+    document.getElementById('daily-chem-view-btn').addEventListener('click', showDailyChemView);
+    document.getElementById('daily-chem-back-btn').addEventListener('click', hideSummaryViews);
+
+    document.getElementById('dosage-view-btn').addEventListener('click', showDosageView);
+    document.getElementById('dosage-back-btn').addEventListener('click', hideSummaryViews);
+
+    document.getElementById('today-route-btn').addEventListener('click', () => {
+      // Toggle filter mode
+      currentFilterMode = currentFilterMode === 'ALL' ? 'TODAY' : 'ALL';
+      renderClientsList();
+      updateFilterUI();
+    });
+
+    // Lee Assistant events
+    const assistantKeyInput = document.getElementById('assistant-api-key');
+    const storedKey = localStorage.getItem(OPENAI_KEY_STORAGE);
+    if (storedKey && assistantKeyInput) {
+      openAiApiKey = storedKey;
+      assistantKeyInput.value = storedKey;
+    }
+
+    document.getElementById('assistant-view-btn').addEventListener('click', showAssistantView);
+    document.getElementById('assistant-send-btn').addEventListener('click', sendAssistantMessage);
+    document.getElementById('assistant-clear-btn').addEventListener('click', clearAssistantConversation);
+    document.getElementById('assistant-back-btn').addEventListener('click', hideSummaryViews);
+  });
+</script>
+</body>
+</html>
